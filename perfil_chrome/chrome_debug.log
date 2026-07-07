@@ -1,0 +1,30 @@
+[36068:26304:0708/000706.924:INFO:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:239] No machine level policy manager exists.
+[10956:21384:0708/000706.989:ERROR:ui\gl\direct_composition_support.cc:247] GetGpuDriverOverlayInfo: Failed to retrieve video device
+[36068:26304:0708/000708.156:INFO:CONSOLE:342] "Unexpected hydration error Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings. 
+    at Suspense (<anonymous>)
+    at E (https://s1-e.pinimg.com/webapp/www/search/[scope].es_ES-cab4f86c37ac18c7.mjs:302:84790)
+    at oV (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:301:11515)
+    at rf (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:301:17998)
+    at rS (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:301:21066)
+    at iD (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:338:90457)
+    at reduxProvider (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:342:254755)
+    at https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:342:238408
+    at gy (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:342:208025)
+    at gk (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:342:208103)
+    at gn (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:342:204877)
+    at f (https://s1-e.pinimg.com/webapp/www/search/[scope].es_ES-cab4f86c37ac18c7.mjs:302:76956)
+    at _ (https://s1-e.pinimg.com/webapp/www/search/[scope].es_ES-cab4f86c37ac18c7.mjs:115:108551)
+    at https://s1-e.pinimg.com/webapp/vendor-react-f84551f0bf1f4e3e.mjs:9:69109
+    at s (https://s1-e.pinimg.com/webapp/82917.es_ES-630e0cb62f6fa8e4.mjs:210:57213)
+    at A (https://s1-e.pinimg.com/webapp/www/search/[scope].es_ES-cab4f86c37ac18c7.mjs:115:73939)
+    at gc (https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs:342:205484)
+    at t_ (https://s1-e.pinimg.com/webapp/vendor-react-f84551f0bf1f4e3e.mjs:14:6356)
+    at tm (https://s1-e.pinimg.com/webapp/vendor-react-f84551f0bf1f4e3e.mjs:14:4339)
+    at https://s1-e.pinimg.com/webapp/vendor-react-f84551f0bf1f4e3e.mjs:14:12507
+    at tj (https://s1-e.pinimg.com/webapp/vendor-react-f84551f0bf1f4e3e.mjs:14:13495)
+    at tL (https://s1-e.pinimg.com/webapp/vendor-react-f84551f0bf1f4e3e.mjs:14:8882)
+    at Suspense (<anonymous>)", source: https://s1-e.pinimg.com/webapp/www/_client.es_ES-37b2b8fceed9d5c5.mjs (342)
+[36068:26304:0708/000708.219:INFO:CONSOLE:87] "[GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment", source: https://accounts.google.com/gsi/client?hl=es (87)
+[36068:26304:0708/000708.227:INFO:CONSOLE:0] "Not signed in with the identity provider.", source: https://es.pinterest.com/search/pins/?q=Ichigo%20Kurosaki%20bleach (0)
+[36068:26304:0708/000713.324:ERROR:components\device_event_log\device_event_log_impl.cc:200] [00:07:13.326] USB: usb_service_win.cc:108 SetupDiGetDeviceProperty({{A45C254E-DF1C-4EFD-8020-67D146A850E0}, 6}) failed: No se ha encontrado el elemento. (0x490)
+[36068:29040:0708/000713.330:ERROR:google_apis\gcm\engine\gcm_store_impl.cc:938] Failed to restore security token.

@@ -1,0 +1,5 @@
+{
+    "images_per_character": 8,
+    "raw_dir": "public/images/raw_characters",
+    "final_dir": "public/images/characters"
+}

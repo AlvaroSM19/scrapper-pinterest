@@ -1,4 +1,4 @@
-import os, json, time, requests, subprocess
+import os, json, time, requests
 from urllib.parse import quote
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -19,13 +19,11 @@ def setup_driver():
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--log-level=3')
-    options.add_argument('--silent')
-    options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
     
     try:
-        service = Service(ChromeDriverManager().install(), log_output=subprocess.DEVNULL)
+        service = Service(ChromeDriverManager().install())
         return webdriver.Chrome(service=service, options=options)
     except Exception as e:
         print(f"Error con ChromeDriver: {e}")

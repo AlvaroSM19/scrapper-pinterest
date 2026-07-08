@@ -48,7 +48,7 @@ class Selector:
         src = os.path.join(RAW_DIR, f"{base}_{idx+1}.jpg")
         dst = os.path.join(FINAL_DIR, f"{base}.webp")
         with Image.open(src) as img:
-            img.convert("RGB").save(dst, "webp", quality=85)
+            img.convert("RGB").save(dst, "webp", quality=100, method=6)
         self.idx += 1
         self.load()
 

@@ -44,6 +44,23 @@ def setup_driver():
                     continue
         raise Exception("Chrome no encontrado en ubicaciones estándar")
 
+MIN_FILE_SIZE = 30000   # bytes (~30 KB)
+MIN_DIMENSION = 400    # píxeles mínimos en lado más corto
+MAX_RATIO = 2.5        # ratio máximo ancho/alto (o alto/ancho) para descartar imágenes muy alargadas
+
+def is_good_image(data):
+    """Comprueba dimensiones y ratio de cuadratura de la imagen."""
+    try:
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(data))
+        w, h = img.size
+        if min(w, h) < MIN_DIMENSION: return False
+        if max(w, h) / min(w, h) > MAX_RATIO: return False
+        return True
+    except:
+        return False
+
 def download_images(char, driver):
     base_name = char['image_url'].split('/')[-1].replace('.webp', '')
     # Comprobar si ya tenemos las N imágenes
@@ -51,14 +68,13 @@ def download_images(char, driver):
         return
 
     print(f"🔍 Buscando {N_IMAGES} imágenes para: {char['name']}")
-    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' bleach')}")
-    driver.execute_script("window.scrollTo(0, 800);")
-    time.sleep(4)
-    
+    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'])}")
+    time.sleep(5)
+
     pins = driver.find_elements(By.CSS_SELECTOR, "div[data-test-id='pin']")
-    # Ordenar por posición vertical para coger las de arriba primero
-    sorted_pins = sorted(pins, key=lambda p: p.location['y'])
-    
+    # Ordenar de izquierda a derecha y de arriba a abajo (por fila y columna)
+    sorted_pins = sorted(pins, key=lambda p: (p.location['y'] // 50, p.location['x']))
+
     count = 0
     for pin in sorted_pins:
         if count >= N_IMAGES: break
@@ -66,15 +82,27 @@ def download_images(char, driver):
             img = pin.find_element(By.TAG_NAME, "img")
             src = img.get_attribute('src')
             if not src or "75x75" in src or "avatars" in src: continue
-            
-            url = src.replace("236x", "736x").replace("474x", "736x").replace("564x", "736x")
-            resp = requests.get(url, stream=True)
-            if resp.status_code == 200 and int(resp.headers.get('Content-Length', 0)) > 12000:
-                with open(os.path.join(RAW_DIR, f"{base_name}_{count + 1}.jpg"), 'wb') as f:
-                    for chunk in resp.iter_content(1024): f.write(chunk)
-                print(f"   ✅ Guardada #{count + 1}")
-                count += 1
+
+            # Intentar obtener la versión 736x (máxima calidad disponible en Pinterest)
+            url = src
+            for res in ["236x", "474x", "564x", "170x"]:
+                url = url.replace(res, "736x")
+
+            resp = requests.get(url, stream=False, timeout=10)
+            if resp.status_code != 200: continue
+
+            data = resp.content
+            if len(data) < MIN_FILE_SIZE: continue
+            if not is_good_image(data): continue
+
+            with open(os.path.join(RAW_DIR, f"{base_name}_{count + 1}.jpg"), 'wb') as f:
+                f.write(data)
+            print(f"   ✅ Guardada #{count + 1}")
+            count += 1
         except: continue
+
+    if count < N_IMAGES:
+        print(f"   ⚠️  Solo se encontraron {count}/{N_IMAGES} imágenes válidas para {char['name']}")
 
 driver = setup_driver()
 for char in chars:

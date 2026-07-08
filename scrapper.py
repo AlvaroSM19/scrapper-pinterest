@@ -68,7 +68,7 @@ def download_images(char, driver):
         return
 
     print(f"🔍 Buscando {N_IMAGES} imágenes para: {char['name']}")
-    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'])}")
+    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' demon slayer')}")
     time.sleep(5)
 
     pins = driver.find_elements(By.CSS_SELECTOR, "div[data-test-id='pin']")

@@ -15,6 +15,8 @@ class Selector:
         self.root.geometry("1400x800")
         self.names = self.get_pending()
         self.idx = 0
+        self.title_label = tk.Label(root, text="", bg="#1e293b", fg="white", font=("Arial", 13, "bold"))
+        self.title_label.pack(pady=(8, 0))
         self.grid = tk.Frame(root, bg="#1e293b")
         self.grid.pack(expand=True, fill=tk.BOTH)
         self.buttons = [tk.Button(self.grid, bg="#0f172a", bd=2, cursor="hand2", command=lambda i=i: self.select(i)) for i in range(N_IMAGES)]
@@ -32,6 +34,7 @@ class Selector:
     def load(self):
         if self.idx >= len(self.names): self.root.quit(); return
         base = self.names[self.idx]
+        self.title_label.config(text=f"{base}  ({self.idx + 1}/{len(self.names)})")
         for i in range(N_IMAGES):
             path = os.path.join(RAW_DIR, f"{base}_{i+1}.jpg")
             if os.path.exists(path):

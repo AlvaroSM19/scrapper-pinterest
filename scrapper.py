@@ -44,12 +44,11 @@ def setup_driver():
                     continue
         raise Exception("Chrome no encontrado en ubicaciones estándar")
 
-MIN_FILE_SIZE = 30000   # bytes (~30 KB)
-MIN_DIMENSION = 400    # píxeles mínimos en lado más corto
-MAX_RATIO = 2.5        # ratio máximo ancho/alto (o alto/ancho) para descartar imágenes muy alargadas
+MIN_FILE_SIZE = 20000  # bytes mínimos
+MIN_DIMENSION = 300   # píxeles mínimos en el lado más corto
+MAX_RATIO = 2.0       # descartar imágenes muy alargadas (banner, etc.)
 
 def is_good_image(data):
-    """Comprueba dimensiones y ratio de cuadratura de la imagen."""
     try:
         from PIL import Image
         import io
@@ -63,29 +62,47 @@ def is_good_image(data):
 
 def download_images(char, driver):
     base_name = char['image_url'].split('/')[-1].replace('.webp', '')
-    # Comprobar si ya tenemos las N imágenes
     if all(os.path.exists(os.path.join(RAW_DIR, f"{base_name}_{i}.jpg")) for i in range(1, N_IMAGES + 1)):
         return
 
     print(f"🔍 Buscando {N_IMAGES} imágenes para: {char['name']}")
     driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' demon slayer')}")
-    time.sleep(5)
+    time.sleep(6)
 
-    pins = driver.find_elements(By.CSS_SELECTOR, "div[data-test-id='pin']")
-    # Ordenar de izquierda a derecha y de arriba a abajo (por fila y columna)
-    sorted_pins = sorted(pins, key=lambda p: (p.location['y'] // 50, p.location['x']))
+    # Usar JavaScript para obtener posición real en pantalla y dimensiones cargadas
+    img_data = driver.execute_script("""
+        var pins = document.querySelectorAll("div[data-test-id='pin']");
+        var result = [];
+        for (var i = 0; i < pins.length; i++) {
+            var pin = pins[i];
+            var img = pin.querySelector("img");
+            if (!img) continue;
+            var rect = pin.getBoundingClientRect();
+            result.push({
+                src: img.src || img.getAttribute('src') || '',
+                naturalWidth: img.naturalWidth,
+                naturalHeight: img.naturalHeight,
+                x: rect.left,
+                y: rect.top
+            });
+        }
+        return result;
+    """)
+
+    # Ordenar tal como las ve el usuario: fila (tolerancia 30px) y luego columna
+    img_data.sort(key=lambda p: (int(p['y'] // 30), p['x']))
 
     count = 0
-    for pin in sorted_pins:
+    for item in img_data:
         if count >= N_IMAGES: break
         try:
-            img = pin.find_element(By.TAG_NAME, "img")
-            src = img.get_attribute('src')
-            if not src or "75x75" in src or "avatars" in src: continue
+            src = item.get('src', '')
+            if not src or '75x75' in src or 'avatars' in src: continue
+            if item.get('naturalWidth', 0) < 50: continue  # imagen no cargada aún
 
-            # Intentar obtener la versión 736x (máxima calidad disponible en Pinterest)
+            # Obtener versión de máxima calidad
             url = src
-            for res in ["236x", "474x", "564x", "170x"]:
+            for res in ["236x", "474x", "564x", "170x", "60x60"]:
                 url = url.replace(res, "736x")
 
             resp = requests.get(url, stream=False, timeout=10)
@@ -97,6 +114,12 @@ def download_images(char, driver):
 
             with open(os.path.join(RAW_DIR, f"{base_name}_{count + 1}.jpg"), 'wb') as f:
                 f.write(data)
+            print(f"   ✅ Guardada #{count + 1}")
+            count += 1
+        except: continue
+
+    if count < N_IMAGES:
+        print(f"   ⚠️  Solo se encontraron {count}/{N_IMAGES} imágenes válidas para {char['name']}")
             print(f"   ✅ Guardada #{count + 1}")
             count += 1
         except: continue

@@ -67,9 +67,16 @@ def download_images(char, driver):
 
     print(f"🔍 Buscando {N_IMAGES} imágenes para: {char['name']}")
     driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' demon slayer')}")
-    time.sleep(6)
+    time.sleep(5)
 
-    # Usar JavaScript para obtener posición real en pantalla y dimensiones cargadas
+    # Scroll para cargar más pins y luego volver arriba
+    for _ in range(4):
+        driver.execute_script("window.scrollBy(0, 700);")
+        time.sleep(1.2)
+    driver.execute_script("window.scrollTo(0, 0);")
+    time.sleep(1)
+
+    # Obtener posición ABSOLUTA usando rect.top + scrollY para ordenar correctamente
     img_data = driver.execute_script("""
         var pins = document.querySelectorAll("div[data-test-id='pin']");
         var result = [];
@@ -81,16 +88,17 @@ def download_images(char, driver):
             result.push({
                 src: img.src || img.getAttribute('src') || '',
                 naturalWidth: img.naturalWidth,
-                naturalHeight: img.naturalHeight,
                 x: rect.left,
-                y: rect.top
+                y: rect.top + window.scrollY
             });
         }
         return result;
     """)
 
-    # Ordenar tal como las ve el usuario: fila (tolerancia 30px) y luego columna
-    img_data.sort(key=lambda p: (int(p['y'] // 30), p['x']))
+    print(f"   📋 Pins encontrados: {len(img_data)}")
+
+    # Ordenar como los ve el usuario: fila (tolerancia 40px) y columna
+    img_data.sort(key=lambda p: (int(p['y'] // 40), p['x']))
 
     count = 0
     for item in img_data:
@@ -98,9 +106,8 @@ def download_images(char, driver):
         try:
             src = item.get('src', '')
             if not src or '75x75' in src or 'avatars' in src: continue
-            if item.get('naturalWidth', 0) < 50: continue  # imagen no cargada aún
+            if item.get('naturalWidth', 0) < 50: continue
 
-            # Obtener versión de máxima calidad
             url = src
             for res in ["236x", "474x", "564x", "170x", "60x60"]:
                 url = url.replace(res, "736x")
@@ -119,13 +126,7 @@ def download_images(char, driver):
         except: continue
 
     if count < N_IMAGES:
-        print(f"   ⚠️  Solo se encontraron {count}/{N_IMAGES} imágenes válidas para {char['name']}")
-            print(f"   ✅ Guardada #{count + 1}")
-            count += 1
-        except: continue
-
-    if count < N_IMAGES:
-        print(f"   ⚠️  Solo se encontraron {count}/{N_IMAGES} imágenes válidas para {char['name']}")
+        print(f"   ⚠️  Solo {count}/{N_IMAGES} imágenes válidas para {char['name']}")
 
 driver = setup_driver()
 for char in chars:

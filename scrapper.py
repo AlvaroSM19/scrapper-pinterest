@@ -1,5 +1,5 @@
-import os, json, time, requests
-from urllib.parse import quote
+import os, json, time, requests, re
+from urllib.parse import quote, unquote
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -45,6 +45,7 @@ def setup_driver():
         raise Exception("Chrome no encontrado en ubicaciones estándar")
 
 MIN_FILE_SIZE = 12000
+SEARCH_SUFFIX = 'BLUE LOCK'  # Cambia aquí el término extra de búsqueda
 
 def get_pins_data(driver):
     """Extrae src y posición de todos los pins en una sola llamada JS, inmune a StaleElement."""
@@ -61,33 +62,65 @@ def get_pins_data(driver):
         return result;
     """) or []
 
-def download_images(char, driver):
-    base_name = char['image_url'].split('/')[-1].replace('.webp', '')
-    if all(os.path.exists(os.path.join(RAW_DIR, f"{base_name}_{i}.jpg")) for i in range(1, N_IMAGES + 1)):
-        return
-
-    print(f"🔍 Buscando {N_IMAGES} imágenes para: {char['name']}")
-    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' BLUE LOCK')}")
+def download_from_pinterest(char, driver, base_name, count, target):
+    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' ' + SEARCH_SUFFIX)}")
     driver.execute_script("window.scrollTo(0, 800);")
     time.sleep(4)
-
     pins_data = sorted(get_pins_data(driver), key=lambda p: p['y'])
-
-    count = 0
     for item in pins_data:
-        if count >= N_IMAGES: break
+        if count >= target: break
         try:
             src = item.get('src', '')
             if not src or "75x75" in src or "avatars" in src: continue
-
             url = src.replace("236x", "736x").replace("474x", "736x").replace("564x", "736x")
             resp = requests.get(url, stream=True)
             if resp.status_code == 200 and int(resp.headers.get('Content-Length', 0)) > MIN_FILE_SIZE:
                 with open(os.path.join(RAW_DIR, f"{base_name}_{count + 1}.jpg"), 'wb') as f:
                     for chunk in resp.iter_content(1024): f.write(chunk)
-                print(f"   ✅ Guardada #{count + 1}")
+                print(f"   ✅ Pinterest #{count + 1}")
                 count += 1
         except: continue
+    return count
+
+def download_from_google(char, driver, base_name, count, target):
+    driver.get(f"https://www.google.com/search?q={quote(char['name'] + ' ' + SEARCH_SUFFIX + ' anime')}&tbm=isch")
+    time.sleep(3)
+    seen = set()
+    # Extraer URLs de imágenes originales desde los links de Google Images
+    links = driver.execute_script("""
+        var anchors = document.querySelectorAll('a[href*="imgurl="]');
+        var result = [];
+        for (var i = 0; i < anchors.length; i++) {
+            result.push(anchors[i].getAttribute('href') || '');
+        }
+        return result;
+    """) or []
+    for href in links:
+        if count >= target: break
+        try:
+            match = re.search(r'imgurl=(https?://[^&]+)', href)
+            if not match: continue
+            url = unquote(match.group(1))
+            if url in seen: continue
+            seen.add(url)
+            resp = requests.get(url, stream=True, timeout=8)
+            if resp.status_code == 200 and int(resp.headers.get('Content-Length', 0)) > MIN_FILE_SIZE:
+                with open(os.path.join(RAW_DIR, f"{base_name}_{count + 1}.jpg"), 'wb') as f:
+                    for chunk in resp.iter_content(1024): f.write(chunk)
+                print(f"   ✅ Google #{count + 1}")
+                count += 1
+        except: continue
+    return count
+
+def download_images(char, driver):
+    base_name = char['image_url'].split('/')[-1].replace('.webp', '')
+    if all(os.path.exists(os.path.join(RAW_DIR, f"{base_name}_{i}.jpg")) for i in range(1, N_IMAGES + 1)):
+        return
+
+    half = N_IMAGES // 2
+    print(f"🔍 {char['name']} — {half} Pinterest + {N_IMAGES - half} Google")
+    count = download_from_pinterest(char, driver, base_name, 0, half)
+    count = download_from_google(char, driver, base_name, count, N_IMAGES)
 
 driver = setup_driver()
 for char in chars:

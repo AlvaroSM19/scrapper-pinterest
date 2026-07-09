@@ -46,25 +46,38 @@ def setup_driver():
 
 MIN_FILE_SIZE = 12000
 
+def get_pins_data(driver):
+    """Extrae src y posición de todos los pins en una sola llamada JS, inmune a StaleElement."""
+    return driver.execute_script("""
+        var pins = document.querySelectorAll("div[data-test-id='pin']");
+        var result = [];
+        for (var i = 0; i < pins.length; i++) {
+            try {
+                var img = pins[i].querySelector("img");
+                if (!img) continue;
+                result.push({ src: img.src, y: pins[i].getBoundingClientRect().top });
+            } catch(e) {}
+        }
+        return result;
+    """) or []
+
 def download_images(char, driver):
     base_name = char['image_url'].split('/')[-1].replace('.webp', '')
     if all(os.path.exists(os.path.join(RAW_DIR, f"{base_name}_{i}.jpg")) for i in range(1, N_IMAGES + 1)):
         return
 
     print(f"🔍 Buscando {N_IMAGES} imágenes para: {char['name']}")
-    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' demon slayer')}")
+    driver.get(f"https://www.pinterest.com/search/pins/?q={quote(char['name'] + ' BLUE LOCK')}")
     driver.execute_script("window.scrollTo(0, 800);")
     time.sleep(4)
 
-    pins = driver.find_elements(By.CSS_SELECTOR, "div[data-test-id='pin']")
-    sorted_pins = sorted(pins, key=lambda p: p.location['y'])
+    pins_data = sorted(get_pins_data(driver), key=lambda p: p['y'])
 
     count = 0
-    for pin in sorted_pins:
+    for item in pins_data:
         if count >= N_IMAGES: break
         try:
-            img = pin.find_element(By.TAG_NAME, "img")
-            src = img.get_attribute('src')
+            src = item.get('src', '')
             if not src or "75x75" in src or "avatars" in src: continue
 
             url = src.replace("236x", "736x").replace("474x", "736x").replace("564x", "736x")
@@ -78,6 +91,11 @@ def download_images(char, driver):
 
 driver = setup_driver()
 for char in chars:
-    download_images(char, driver)
-    time.sleep(2)
+    for intento in range(3):  # hasta 3 reintentos por personaje
+        try:
+            download_images(char, driver)
+            break
+        except Exception as e:
+            print(f"   ⚠️  Error en {char['name']} (intento {intento+1}/3): {e}")
+            time.sleep(3)
 driver.quit()
